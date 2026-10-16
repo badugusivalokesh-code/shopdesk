@@ -1,0 +1,3 @@
+# Express route modules (e.g. products.routes.js, auth.routes.js) are
+# added here in Phase 2. Intentionally empty in Phase 1 — no API endpoints
+# are implemented yet.

@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens (light theme = default, dark theme = .dark override).
+ *
+ * Source: pixel-sampled from the supplied Horizon UI screenshots
+ * (Main_Dashboard.png / Main_Dashboard__1_.png / Tables.png / Kanban.png /
+ * Profile.png / Sign_In.png / NFT_Marketplace.png). See
+ * shopdesk/DESIGN_TOKENS.md for the sampling method, exact crop
+ * coordinates, and which values are verified vs. estimated.
+ */
+:root {
+  --color-bg: #f4f7fe;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f4f7fe;
+  --color-sidebar: #ffffff;
+
+  --color-text-primary: #2b3674;
+  --color-text-secondary: #707eae;
+  --color-text-tertiary: #a3aed0;
+
+  --color-border: #e4e8f4;
+}
+
+.dark {
+  --color-bg: #0b1437;
+  --color-surface: #111c44;
+  --color-surface-secondary: #1b254b;
+  --color-sidebar: #111c44;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a3aed0;
+  --color-text-tertiary: #707eae;
+
+  /* Estimated — not pixel-verified. The dark-theme screenshots show no
+     visible divider/border line in the sampled regions (cards sit on the
+     page background with shadow/elevation only, not a hairline border). */
+  --color-border: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-page text-text-primary font-sans antialiased transition-colors duration-200;
+  }
+}
