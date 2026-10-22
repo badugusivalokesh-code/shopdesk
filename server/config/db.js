@@ -1,18 +1,57 @@
 import mongoose from "mongoose";
 
 /**
- * Establishes the MongoDB connection via Mongoose.
- *
- * Phase 1 scope: this function is defined but intentionally NOT called
- * anywhere yet (not from server.js, not from this module). Wiring it up —
- * and actually connecting — is Phase 2 work.
+ * Return the URI from either a normalized config object or a direct string.
+ * Falling back to process.env keeps this helper useful on its own while the
+ * server bootstrap passes validated configuration explicitly.
  */
-export async function connectDB() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    throw new Error("MONGODB_URI is not defined in the environment");
+function resolveMongoUri(configOrUri) {
+  if (typeof configOrUri === "string") {
+    return configOrUri.trim();
   }
 
-  await mongoose.connect(uri);
-  console.log("MongoDB connected");
+  if (configOrUri && typeof configOrUri === "object") {
+    return String(
+      configOrUri.mongoUri ?? configOrUri.mongodbUri ?? configOrUri.MONGODB_URI ?? "",
+    ).trim();
+  }
+
+  return typeof process.env.MONGODB_URI === "string"
+    ? process.env.MONGODB_URI.trim()
+    : "";
+}
+
+/**
+ * Establish the MongoDB connection via Mongoose.
+ *
+ * Errors deliberately propagate to the caller so startup can stop rather
+ * than serving an API that has not established its database dependency.
+ */
+export async function connectDB(configOrUri) {
+  const uri = resolveMongoUri(configOrUri);
+
+  if (!uri) {
+    throw new Error("MONGODB_URI must be set before connecting to MongoDB");
+  }
+
+  return mongoose.connect(uri);
+}
+
+/**
+ * Return a public, non-secret view of the current Mongoose connection state.
+ */
+export function getDatabaseStatus() {
+  const stateNames = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
+  };
+
+  const readyState = mongoose.connection.readyState;
+
+  return {
+    status: stateNames[readyState] ?? "unknown",
+    readyState,
+  };
 }
