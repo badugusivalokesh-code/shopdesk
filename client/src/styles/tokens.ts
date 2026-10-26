@@ -2,43 +2,68 @@
  * Design tokens as plain values, for code paths that can't read CSS
  * variables (e.g. Recharts series `stroke`/`fill` props).
  *
- * Keep this file in sync with src/index.css and tailwind.config.ts.
- * Source: pixel-sampled from the supplied Horizon UI screenshots — see
- * shopdesk/DESIGN_TOKENS.md.
+ * Keep this file in sync with src/index.css and tailwind.config.ts. These
+ * values follow the approved colour-grade palette.
  */
 
 export const colors = {
   light: {
-    bg: "#F4F7FE",
+    bg: "#F5F7FC",
     surface: "#FFFFFF",
-    surfaceSecondary: "#F4F7FE",
+    surfaceElevated: "#FFFFFF",
+    surfaceSecondary: "#F5F7FC",
     sidebar: "#FFFFFF",
-    textPrimary: "#2B3674",
-    textSecondary: "#707EAE",
-    textTertiary: "#A3AED0",
-    border: "#E4E8F4",
+    overlay: "rgba(23, 43, 77, 0.3)",
+    brand: "#4F46E5",
+    brandLight: "#4338CA",
+    brandForeground: "#FFFFFF",
+    textPrimary: "#172B4D",
+    textSecondary: "#68778D",
+    textTertiary: "#68778D",
+    border: "#E8EDF5",
+    success: "#15803D",
+    successForeground: "#FFFFFF",
+    warning: "#B45309",
+    warningForeground: "#78350F",
+    danger: "#B91C1C",
+    dangerForeground: "#FFFFFF",
+    info: "#4F46E5",
+    pending: "#B45309",
   },
   dark: {
-    bg: "#0B1437",
-    surface: "#111C44",
-    surfaceSecondary: "#1B254B",
-    sidebar: "#111C44",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#A3AED0",
-    textTertiary: "#707EAE",
-    /** Estimated — see shopdesk/DESIGN_TOKENS.md */
-    border: "rgba(255, 255, 255, 0.08)",
+    bg: "#111827",
+    surface: "#1F2937",
+    surfaceElevated: "#1F2937",
+    surfaceSecondary: "#374151",
+    sidebar: "#1F2937",
+    overlay: "rgba(0, 0, 0, 0.58)",
+    brand: "#818CF8",
+    brandLight: "#A5B4FC",
+    brandForeground: "#111827",
+    textPrimary: "#F3F4F6",
+    textSecondary: "#9CA3AF",
+    textTertiary: "#9CA3AF",
+    border: "#374151",
+    success: "#4ADE80",
+    successForeground: "#052E16",
+    warning: "#FBBF24",
+    warningForeground: "#FEF3C7",
+    danger: "#F87171",
+    dangerForeground: "#450A0A",
+    info: "#818CF8",
+    pending: "#FBBF24",
   },
   brand: {
-    DEFAULT: "#4318FF",
-    light: "#7551FF",
+    DEFAULT: "#4F46E5",
+    light: "#818CF8",
+    foreground: "#FFFFFF",
   },
   status: {
-    success: "#01B574",
-    danger: "#EE5D50",
-    warning: "#FFCE20",
-    info: "#3965FF",
-    pending: "#FFB547",
+    success: "#15803D",
+    danger: "#B91C1C",
+    warning: "#B45309",
+    info: "#4F46E5",
+    pending: "#B45309",
   },
 } as const;
 

@@ -3,11 +3,8 @@ import type { Config } from "tailwindcss";
 /**
  * ShopDesk design tokens.
  *
- * Color values below were sampled directly from the supplied Horizon UI
- * reference screenshots (pixel-color extraction via Pillow — see
- * shopdesk/DESIGN_TOKENS.md for the method and source crops), not copied
- * from assumed Figma values. Values noted as "estimated" were not sampled
- * with confidence and should be treated as a starting point only.
+ * Color values below follow the approved colour-grade palette and resolve
+ * through CSS variables so light and dark themes share one token name.
  *
  * Theme switching uses Tailwind's `class` strategy: add/remove `dark` on
  * <html> (see src/context/ThemeContext.tsx). Colors are wired to CSS
@@ -22,14 +19,16 @@ export default {
         // Surfaces
         page: "var(--color-bg)",
         surface: "var(--color-surface)",
-        "surface-secondary": "var(--color-surface-secondary)",
+        "surface-elevated": "var(--color-surface-elevated)",
+        "surface-secondary": "rgb(var(--color-surface-secondary-rgb) / <alpha-value>)",
         sidebar: "var(--color-sidebar)",
+        overlay: "var(--color-overlay)",
 
-        // Brand / accent (verified: #4318FF buttons & active states in both
-        // themes; #7551FF lighter accent used for dark-mode active indicators)
+        // Brand / accent, including a readable foreground for solid controls.
         brand: {
-          DEFAULT: "#4318FF",
-          light: "#7551FF",
+          DEFAULT: "rgb(var(--color-brand-rgb) / <alpha-value>)",
+          light: "rgb(var(--color-brand-light-rgb) / <alpha-value>)",
+          foreground: "var(--color-brand-foreground)",
         },
 
         // Text
@@ -40,13 +39,17 @@ export default {
         // Borders / dividers
         border: "var(--color-border)",
 
-        // Status (verified against Complex Table / Kanban badges,
-        // consistent across both themes)
-        success: "#01B574",
-        danger: "#EE5D50",
-        warning: "#FFCE20",
-        info: "#3965FF",
-        pending: "#FFB547",
+        // Restrained semantic status colors with theme-specific readable
+        // foregrounds; info stays tied to the indigo brand accent.
+        success: "rgb(var(--color-success-rgb) / <alpha-value>)",
+        "success-foreground": "var(--color-success-foreground)",
+        danger: "rgb(var(--color-danger-rgb) / <alpha-value>)",
+        "danger-foreground": "var(--color-danger-foreground)",
+        warning: "rgb(var(--color-warning-rgb) / <alpha-value>)",
+        "warning-foreground": "var(--color-warning-foreground)",
+        info: "rgb(var(--color-info-rgb) / <alpha-value>)",
+        "info-foreground": "var(--color-info-foreground)",
+        pending: "var(--color-pending)",
       },
       fontFamily: {
         // Visual style matches a geometric/grotesque sans (DM Sans is the

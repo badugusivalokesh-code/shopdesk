@@ -1,51 +1,106 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /*
- * Design tokens (light theme = default, dark theme = .dark override).
- *
- * Source: pixel-sampled from the supplied Horizon UI screenshots
- * (Main_Dashboard.png / Main_Dashboard__1_.png / Tables.png / Kanban.png /
- * Profile.png / Sign_In.png / NFT_Marketplace.png). See
- * shopdesk/DESIGN_TOKENS.md for the sampling method, exact crop
- * coordinates, and which values are verified vs. estimated.
+ * Approved colour-grade tokens (light theme = default, dark theme = .dark
+ * override). Keep this source of truth aligned with styles/tokens.ts and
+ * tailwind.config.ts.
  */
 :root {
-  --color-bg: #f4f7fe;
+  --color-bg: #f5f7fc;
+  --color-bg-rgb: 245 247 252;
+  color-scheme: light;
+
   --color-surface: #ffffff;
-  --color-surface-secondary: #f4f7fe;
+  --color-surface-elevated: #ffffff;
+  --color-surface-secondary: #f5f7fc;
+  --color-surface-secondary-rgb: 245 247 252;
   --color-sidebar: #ffffff;
+  --color-overlay: rgba(23, 43, 77, 0.3);
 
-  --color-text-primary: #2b3674;
-  --color-text-secondary: #707eae;
-  --color-text-tertiary: #a3aed0;
+  --color-brand: #4f46e5;
+  --color-brand-rgb: 79 70 229;
+  --color-brand-light: #4338ca;
+  --color-brand-light-rgb: 67 56 202;
+  --color-brand-foreground: #ffffff;
 
-  --color-border: #e4e8f4;
+  --color-text-primary: #172b4d;
+  --color-text-secondary: #68778d;
+  --color-text-tertiary: #68778d;
+
+  --color-border: #e8edf5;
+
+  --color-success: #15803d;
+  --color-success-rgb: 21 128 61;
+  --color-success-foreground: #ffffff;
+  --color-warning: #b45309;
+  --color-warning-rgb: 180 83 9;
+  --color-warning-foreground: #78350f;
+  --color-danger: #b91c1c;
+  --color-danger-rgb: 185 28 28;
+  --color-danger-foreground: #ffffff;
+  --color-info: var(--color-brand);
+  --color-info-rgb: 79 70 229;
+  --color-info-foreground: var(--color-brand-foreground);
+  --color-pending: var(--color-warning);
 }
 
 .dark {
-  --color-bg: #0b1437;
-  --color-surface: #111c44;
-  --color-surface-secondary: #1b254b;
-  --color-sidebar: #111c44;
+  color-scheme: dark;
 
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a3aed0;
-  --color-text-tertiary: #707eae;
+  --color-bg: #111827;
+  --color-bg-rgb: 17 24 39;
+  --color-surface: #1f2937;
+  --color-surface-elevated: #1f2937;
+  --color-surface-secondary: #374151;
+  --color-surface-secondary-rgb: 55 65 81;
+  --color-sidebar: #1f2937;
+  --color-overlay: rgba(0, 0, 0, 0.58);
 
-  /* Estimated — not pixel-verified. The dark-theme screenshots show no
-     visible divider/border line in the sampled regions (cards sit on the
-     page background with shadow/elevation only, not a hairline border). */
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-brand: #818cf8;
+  --color-brand-rgb: 129 140 248;
+  --color-brand-light: #a5b4fc;
+  --color-brand-light-rgb: 165 180 252;
+  --color-brand-foreground: #111827;
+
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+  --color-text-tertiary: #9ca3af;
+
+  --color-border: #374151;
+
+  --color-success: #4ade80;
+  --color-success-rgb: 74 222 128;
+  --color-success-foreground: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-rgb: 251 191 36;
+  --color-warning-foreground: #fef3c7;
+  --color-danger: #f87171;
+  --color-danger-rgb: 248 113 113;
+  --color-danger-foreground: #450a0a;
+  --color-info: var(--color-brand);
+  --color-info-rgb: 129 140 248;
+  --color-info-foreground: var(--color-brand-foreground);
+  --color-pending: var(--color-warning);
 }
 
 @layer base {
   html {
-    @apply scroll-smooth;
+    scroll-behavior: smooth;
+    min-height: 100%;
+    background-color: var(--color-bg);
   }
 
   body {
-    @apply bg-page text-text-primary font-sans antialiased transition-colors duration-200;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: "DM Sans", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    min-height: 100vh;
   }
 }

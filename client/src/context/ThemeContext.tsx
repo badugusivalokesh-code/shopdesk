@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -17,50 +18,112 @@ interface ThemeContextValue {
 }
 
 const STORAGE_KEY = "shopdesk-theme";
+const SYSTEM_THEME_QUERY = "(prefers-color-scheme: dark)";
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
+function readStoredTheme(): Theme | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    return stored === "light" || stored === "dark" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function readSystemTheme(): Theme {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  return window.matchMedia?.(SYSTEM_THEME_QUERY).matches ? "dark" : "light";
+}
+
 function getInitialTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") {
+    return "light";
+  }
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
+  return (
+    readStoredTheme() ??
+    (document.documentElement.classList.contains("dark")
+      ? "dark"
+      : readSystemTheme())
+  );
+}
 
-  const prefersDark = window.matchMedia?.(
-    "(prefers-color-scheme: dark)"
-  ).matches;
-  return prefersDark ? "dark" : "light";
+function applyTheme(theme: Theme): void {
+  const root = document.documentElement;
+  root.classList.toggle("dark", theme === "dark");
+  root.dataset.theme = theme;
+  root.style.colorScheme = theme;
+}
+
+function persistTheme(theme: Theme): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    // A restricted storage context should not prevent theme switching.
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("dark", theme === "dark");
-    window.localStorage.setItem(STORAGE_KEY, theme);
+  // Keep the DOM synchronized before paint so route changes and explicit
+  // toggles do not render one frame with the previous theme.
+  useLayoutEffect(() => {
+    applyTheme(theme);
   }, [theme]);
 
-  const setTheme = useCallback((next: Theme) => setThemeState(next), []);
-  const toggleTheme = useCallback(
-    () => setThemeState((prev) => (prev === "light" ? "dark" : "light")),
-    []
-  );
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(SYSTEM_THEME_QUERY);
+    const handleSystemThemeChange = (event: MediaQueryListEvent) => {
+      // System changes apply only while the user has not chosen a preference.
+      if (!readStoredTheme()) {
+        setThemeState(event.matches ? "dark" : "light");
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+  }, []);
+
+  const setTheme = useCallback((nextTheme: Theme) => {
+    persistTheme(nextTheme);
+    setThemeState(nextTheme);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((currentTheme) => {
+      const nextTheme = currentTheme === "light" ? "dark" : "light";
+      persistTheme(nextTheme);
+      return nextTheme;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({ theme, toggleTheme, setTheme }),
-    [theme, toggleTheme, setTheme]
+    [theme, toggleTheme, setTheme],
   );
 
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
+  const context = useContext(ThemeContext);
+
+  if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
-  return ctx;
+
+  return context;
 }
