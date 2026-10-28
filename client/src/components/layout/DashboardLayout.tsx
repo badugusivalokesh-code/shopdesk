@@ -36,6 +36,39 @@ const pageMetadata = {
   "/profile": { breadcrumb: "Profile", title: "Profile" },
 } as const;
 
+const PROFILE_MENU_GUTTER = 8;
+const PROFILE_MENU_WIDTH = 224;
+
+type ProfileMenuPosition = {
+  maxHeight: number;
+  right: number;
+  top: number;
+};
+
+function getProfileMenuPosition(button: HTMLButtonElement): ProfileMenuPosition {
+  const rect = button.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const viewportWidth = viewport?.width ?? window.innerWidth;
+  const viewportHeight = viewport?.height ?? window.innerHeight;
+  const menuWidth = Math.min(
+    PROFILE_MENU_WIDTH,
+    Math.max(0, viewportWidth - PROFILE_MENU_GUTTER * 2),
+  );
+  const top = Math.max(
+    PROFILE_MENU_GUTTER,
+    Math.min(rect.bottom + PROFILE_MENU_GUTTER, viewportHeight - PROFILE_MENU_GUTTER),
+  );
+
+  return {
+    maxHeight: Math.max(0, viewportHeight - top - PROFILE_MENU_GUTTER),
+    right: Math.min(
+      Math.max(PROFILE_MENU_GUTTER, viewportWidth - rect.right),
+      Math.max(PROFILE_MENU_GUTTER, viewportWidth - menuWidth - PROFILE_MENU_GUTTER),
+    ),
+    top,
+  };
+}
+
 export default function DashboardLayout() {
   const { theme, toggleTheme } = useTheme();
   const { logout, user } = useAuth();
@@ -44,10 +77,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [profileMenuPosition, setProfileMenuPosition] = useState<{
-    top: number;
-    right: number;
-  } | null>(null);
+  const [profileMenuPosition, setProfileMenuPosition] = useState<ProfileMenuPosition | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const profileMenuButtonRef = useRef<HTMLButtonElement>(null);
@@ -87,11 +117,7 @@ export default function DashboardLayout() {
         return;
       }
 
-      const rect = button.getBoundingClientRect();
-      setProfileMenuPosition({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
-      });
+      setProfileMenuPosition(getProfileMenuPosition(button));
     }
 
     function handlePointerDown(event: PointerEvent) {
@@ -116,12 +142,16 @@ export default function DashboardLayout() {
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("resize", updateProfileMenuPosition);
     window.addEventListener("scroll", updateProfileMenuPosition, true);
+    window.visualViewport?.addEventListener("resize", updateProfileMenuPosition);
+    window.visualViewport?.addEventListener("scroll", updateProfileMenuPosition);
 
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("resize", updateProfileMenuPosition);
       window.removeEventListener("scroll", updateProfileMenuPosition, true);
+      window.visualViewport?.removeEventListener("resize", updateProfileMenuPosition);
+      window.visualViewport?.removeEventListener("scroll", updateProfileMenuPosition);
     };
   }, [isProfileMenuOpen]);
 
@@ -316,12 +346,9 @@ export default function DashboardLayout() {
                       return;
                     }
 
-                    const rect = profileMenuButtonRef.current?.getBoundingClientRect();
-                    if (rect) {
-                      setProfileMenuPosition({
-                        top: rect.bottom + 8,
-                        right: window.innerWidth - rect.right,
-                      });
+                    const button = profileMenuButtonRef.current;
+                    if (button) {
+                      setProfileMenuPosition(getProfileMenuPosition(button));
                       setIsProfileMenuOpen(true);
                     }
                   }}
@@ -356,7 +383,7 @@ export default function DashboardLayout() {
                       ref={profileMenuRef}
                       role="menu"
                       style={{
-                        maxHeight: `calc(100dvh - ${profileMenuPosition.top}px - 0.5rem)`,
+                        maxHeight: profileMenuPosition.maxHeight,
                         right: profileMenuPosition.right,
                         top: profileMenuPosition.top,
                       }}
