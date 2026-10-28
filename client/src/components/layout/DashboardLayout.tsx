@@ -42,8 +42,10 @@ export default function DashboardLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const hasOpenedSidebar = useRef(false);
   const page =
     pageMetadata[pathname as keyof typeof pageMetadata] ??
@@ -64,8 +66,38 @@ export default function DashboardLayout() {
   function handleLogout() {
     logout();
     closeSidebar();
+    setIsProfileMenuOpen(false);
     navigate("/login", { replace: true });
   }
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return;
+    }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isProfileMenuOpen]);
 
   useEffect(() => {
     if (!isSidebarOpen) {
@@ -185,14 +217,14 @@ export default function DashboardLayout() {
             </div>
 
             <Button
-              aria-label="Log out"
+              aria-label="Sign out"
               className="w-full justify-start px-3 py-3 text-left text-sm font-semibold"
               onClick={handleLogout}
               size="sm"
               variant="outline"
             >
               <LogoutIcon className="h-5 w-5 shrink-0" />
-              <span>Log out</span>
+              <span>Sign out</span>
             </Button>
           </div>
         </div>
@@ -246,26 +278,72 @@ export default function DashboardLayout() {
                 </span>
               </Button>
 
-              <NavLink
-                aria-label={`Open profile page for ${displayName}`}
-                className="flex items-center gap-2 rounded-control p-1.5 transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-page sm:gap-3 sm:pr-2"
-                to="/profile"
-              >
-                <span
-                  aria-label={`Avatar for ${displayName}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-foreground ring-4 ring-brand/10"
-                  role="img"
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  aria-expanded={isProfileMenuOpen}
+                  aria-haspopup="menu"
+                  aria-label={`User menu for ${displayName}`}
+                  className="flex items-center gap-2 rounded-control p-1.5 transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-page sm:gap-3 sm:pr-2"
+                  onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                  type="button"
                 >
-                  {initials}
-                </span>
-                <span className="hidden min-w-0 text-left sm:block">
-                  <span className="block max-w-40 truncate text-sm font-bold text-text-primary">
-                    {displayName}
+                  <span
+                    aria-label={`Avatar for ${displayName}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-foreground ring-4 ring-brand/10"
+                    role="img"
+                  >
+                    {initials}
                   </span>
-                  <span className="block max-w-40 truncate text-xs text-text-tertiary">{displayEmail}</span>
-                </span>
-                <ChevronDownIcon className="hidden h-4 w-4 text-text-tertiary sm:block" />
-              </NavLink>
+                  <span className="hidden min-w-0 text-left sm:block">
+                    <span className="block max-w-40 truncate text-sm font-bold text-text-primary">
+                      {displayName}
+                    </span>
+                    <span className="block max-w-40 truncate text-xs text-text-tertiary">{displayEmail}</span>
+                  </span>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 text-text-tertiary transition-transform duration-150 ${
+                      isProfileMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isProfileMenuOpen ? (
+                  <div
+                    aria-label="User menu"
+                    className="absolute right-0 top-full z-50 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-card dark:shadow-card-dark"
+                    role="menu"
+                  >
+                    <div className="border-b border-border px-3 py-2 sm:hidden">
+                      <p className="truncate text-sm font-bold text-text-primary">{displayName}</p>
+                      {displayEmail ? (
+                        <p className="truncate text-xs text-text-tertiary">{displayEmail}</p>
+                      ) : null}
+                    </div>
+
+                    <div className="py-1">
+                      <NavLink
+                        className="flex items-center gap-2.5 rounded-control px-3 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                        role="menuitem"
+                        to="/profile"
+                      >
+                        <ProfileIcon className="h-4 w-4 shrink-0" />
+                        <span>Profile</span>
+                      </NavLink>
+
+                      <button
+                        className="flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-left text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
+                        onClick={handleLogout}
+                        role="menuitem"
+                        type="button"
+                      >
+                        <LogoutIcon className="h-4 w-4 shrink-0" />
+                        <span>Sign out</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </header>
