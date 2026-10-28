@@ -132,7 +132,7 @@ export default function SetupStatusPage() {
   }, [loadData]);
 
   const chartTokens = theme === "dark" ? colors.dark : colors.light;
-  const chartBrand = chartTokens.brand;
+  const chartBrand = chartTokens.chartBar;
 
   return (
     <div className="min-w-0 space-y-8">
@@ -213,20 +213,22 @@ function DashboardContent({ data, chartBrand, chartTokens }: DashboardContentPro
         <CardHeader className="flex-wrap sm:items-center">
           <div className="min-w-0">
             <CardTitle>Orders per day</CardTitle>
-            <CardDescription>Daily order volume over the last 7 days (UTC).</CardDescription>
+            <CardDescription>
+              Daily order counts for the seven most recent dates with orders (UTC).
+            </CardDescription>
           </div>
-          <StatusBadge label="Last 7 days" status="info" tone="info" size="sm" />
+          <StatusBadge label="Latest 7 order dates" status="info" tone="info" size="sm" />
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           {ordersByDay.length === 0 ? (
             <EmptyState
               className="min-h-[18rem] border-0 bg-surface-secondary/50 p-6 sm:p-8"
-              description="There are no daily order statistics to display yet."
-              title="No order trend available"
+              description="Order counts will appear here when orders are placed."
+              title="No orders to display"
             />
           ) : (
             <div
-              aria-label="Orders per day for the last 7 days"
+              aria-label="Orders per day for the seven most recent dates with orders"
               className="h-[18rem] min-w-0 w-full sm:h-[20rem] lg:h-[22rem]"
               role="img"
             >
@@ -237,9 +239,9 @@ function DashboardContent({ data, chartBrand, chartTokens }: DashboardContentPro
                   margin={{ bottom: 8, left: 0, right: 8, top: 12 }}
                 >
                   <CartesianGrid
-                    stroke={chartTokens.border}
+                    stroke={chartTokens.chartGrid}
                     strokeDasharray="3 3"
-                    strokeOpacity={0.8}
+                    strokeOpacity={0.72}
                     vertical={false}
                   />
                   <XAxis
@@ -249,7 +251,7 @@ function DashboardContent({ data, chartBrand, chartTokens }: DashboardContentPro
                     minTickGap={18}
                     padding={{ left: 8, right: 8 }}
                     tickFormatter={formatChartDate}
-                    tick={{ fill: chartTokens.textSecondary, fontSize: 11 }}
+                    tick={{ fill: chartTokens.chartAxis, fontSize: 11 }}
                     tickMargin={8}
                     tickLine={false}
                   />
@@ -257,7 +259,7 @@ function DashboardContent({ data, chartBrand, chartTokens }: DashboardContentPro
                     allowDecimals={false}
                     axisLine={false}
                     tickFormatter={formatCount}
-                    tick={{ fill: chartTokens.textSecondary, fontSize: 11 }}
+                    tick={{ fill: chartTokens.chartAxis, fontSize: 11 }}
                     tickMargin={8}
                     tickLine={false}
                     width={36}
@@ -265,22 +267,32 @@ function DashboardContent({ data, chartBrand, chartTokens }: DashboardContentPro
                   <Tooltip
                     contentStyle={{
                       backgroundColor: chartTokens.surface,
-                      border: `1px solid ${chartTokens.border}`,
+                      border: `1px solid ${chartTokens.chartTooltipBorder}`,
                       borderRadius: "12px",
                       color: chartTokens.textPrimary,
                     }}
-                    cursor={{ fill: chartTokens.surfaceSecondary, fillOpacity: 0.8 }}
+                    cursor={{ fill: chartTokens.surfaceSecondary, fillOpacity: 0.35 }}
                     formatter={(value) => [formatCount(Number(value)), "Orders"]}
                     itemStyle={{ color: chartBrand, fontWeight: 700 }}
                     labelFormatter={(label) => formatChartTooltipDate(String(label))}
-                    labelStyle={{ color: chartTokens.textSecondary, fontWeight: 600 }}
+                    labelStyle={{ color: chartTokens.chartAxis, fontWeight: 600 }}
                   />
                   <Bar
+                    activeBar={{
+                      fill: chartTokens.chartBarActive,
+                      fillOpacity: 1,
+                      stroke: chartTokens.chartBarStroke,
+                      strokeWidth: 2,
+                    }}
                     dataKey="count"
                     fill={chartBrand}
+                    fillOpacity={1}
+                    isAnimationActive={false}
                     maxBarSize={48}
                     name="Orders"
                     radius={[8, 8, 0, 0]}
+                    stroke={chartTokens.chartBarStroke}
+                    strokeWidth={1.5}
                   />
                 </BarChart>
               </ResponsiveContainer>

@@ -42,10 +42,13 @@ export function createApp(config = {}) {
   app.use(express.json());
 
   app.get("/api/health", (request, response) => {
-    response.json({
-      status: "ok",
+    const dbStatus = getDatabaseStatus();
+    const isHealthy = dbStatus.readyState === 1;
+
+    response.status(isHealthy ? 200 : 503).json({
+      status: isHealthy ? "ok" : "degraded",
       service: "shopdesk-api",
-      database: getDatabaseStatus(),
+      database: dbStatus,
     });
   });
 

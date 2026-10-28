@@ -4,33 +4,12 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { createAuthMiddleware } from "../middleware/auth.js";
 
-const DASHBOARD_DAYS = 7;
+const ORDER_DATE_LIMIT = 7;
 const RECENT_ORDER_LIMIT = 5;
 
 function toFiniteNumber(value, fallback = 0) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
-}
-
-function getUtcDateRange() {
-  const now = new Date();
-  const today = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-  const start = new Date(today);
-  start.setUTCDate(start.getUTCDate() - (DASHBOARD_DAYS - 1));
-  const end = new Date(today);
-  end.setUTCDate(end.getUTCDate() + 1);
-
-  return { start, end };
-}
-
-function getUtcDateKeys(start) {
-  return Array.from({ length: DASHBOARD_DAYS }, (_, index) => {
-    const date = new Date(start);
-    date.setUTCDate(date.getUTCDate() + index);
-    return date.toISOString().slice(0, 10);
-  });
 }
 
 function serializeCreatedAt(value) {
@@ -62,11 +41,6 @@ export function createStatsRouter({ jwtSecret } = {}) {
   router.use(authenticate);
 
   router.get("/", async (request, response, next) => {
-    // UTC keeps the seven-day window and its labels independent of the
-    // browser/server local timezone.
-    const { start, end } = getUtcDateRange();
-    const dateKeys = getUtcDateKeys(start);
-
     try {
       const [
         totalProducts,
@@ -85,14 +59,6 @@ export function createStatsRouter({ jwtSecret } = {}) {
         Product.countDocuments({ stock: { $lte: 5 } }),
         Order.aggregate([
           {
-            $match: {
-              createdAt: {
-                $gte: start,
-                $lt: end,
-              },
-            },
-          },
-          {
             $group: {
               _id: {
                 $dateToString: {
@@ -104,6 +70,8 @@ export function createStatsRouter({ jwtSecret } = {}) {
               count: { $sum: 1 },
             },
           },
+          { $sort: { _id: -1 } },
+          { $limit: ORDER_DATE_LIMIT },
           { $sort: { _id: 1 } },
         ]),
         Order.find(
@@ -121,21 +89,17 @@ export function createStatsRouter({ jwtSecret } = {}) {
           .limit(RECENT_ORDER_LIMIT),
       ]);
 
-      const orderCountByDate = new Map(
-        (Array.isArray(dailyOrderCounts) ? dailyOrderCounts : []).map(
-          (entry) => [String(entry?._id), toFiniteNumber(entry?.count)],
-        ),
-      );
-
       return response.json({
         totalProducts: toFiniteNumber(totalProducts),
         totalOrders: toFiniteNumber(totalOrders),
         totalRevenue: toFiniteNumber(deliveredRevenue?.[0]?.total),
         lowStockProducts: toFiniteNumber(lowStockProducts),
-        ordersByDay: dateKeys.map((date) => ({
-          date,
-          count: toFiniteNumber(orderCountByDate.get(date)),
-        })),
+        ordersByDay: (Array.isArray(dailyOrderCounts) ? dailyOrderCounts : []).map(
+          (entry) => ({
+            date: String(entry?._id),
+            count: toFiniteNumber(entry?.count),
+          }),
+        ),
         recentOrders: (Array.isArray(recentOrders) ? recentOrders : []).map(
           toSafeRecentOrder,
         ),
