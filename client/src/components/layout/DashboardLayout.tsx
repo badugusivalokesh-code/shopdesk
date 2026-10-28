@@ -4,6 +4,7 @@ import {
   useState,
   type ComponentType,
 } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -43,8 +44,13 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [profileMenuPosition, setProfileMenuPosition] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const profileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const hasOpenedSidebar = useRef(false);
   const page =
@@ -75,10 +81,25 @@ export default function DashboardLayout() {
       return;
     }
 
-    function handleClickOutside(event: MouseEvent) {
+    function updateProfileMenuPosition() {
+      const button = profileMenuButtonRef.current;
+      if (!button) {
+        return;
+      }
+
+      const rect = button.getBoundingClientRect();
+      setProfileMenuPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
       if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target as Node)
+        target instanceof Node &&
+        !profileMenuButtonRef.current?.contains(target) &&
+        !profileMenuRef.current?.contains(target)
       ) {
         setIsProfileMenuOpen(false);
       }
@@ -90,12 +111,17 @@ export default function DashboardLayout() {
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    updateProfileMenuPosition();
+    document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updateProfileMenuPosition);
+    window.addEventListener("scroll", updateProfileMenuPosition, true);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updateProfileMenuPosition);
+      window.removeEventListener("scroll", updateProfileMenuPosition, true);
     };
   }, [isProfileMenuOpen]);
 
@@ -278,13 +304,28 @@ export default function DashboardLayout() {
                 </span>
               </Button>
 
-              <div className="relative" ref={profileMenuRef}>
+              <div className="relative">
                 <button
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
                   aria-label={`User menu for ${displayName}`}
                   className="flex items-center gap-2 rounded-control p-1.5 transition-colors hover:bg-surface-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-page sm:gap-3 sm:pr-2"
-                  onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                  onClick={() => {
+                    if (isProfileMenuOpen) {
+                      setIsProfileMenuOpen(false);
+                      return;
+                    }
+
+                    const rect = profileMenuButtonRef.current?.getBoundingClientRect();
+                    if (rect) {
+                      setProfileMenuPosition({
+                        top: rect.bottom + 8,
+                        right: window.innerWidth - rect.right,
+                      });
+                      setIsProfileMenuOpen(true);
+                    }
+                  }}
+                  ref={profileMenuButtonRef}
                   type="button"
                 >
                   <span
@@ -307,42 +348,51 @@ export default function DashboardLayout() {
                   />
                 </button>
 
-                {isProfileMenuOpen ? (
-                  <div
-                    aria-label="User menu"
-                    className="absolute right-0 top-full z-50 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-card dark:shadow-card-dark"
-                    role="menu"
-                  >
-                    <div className="border-b border-border px-3 py-2 sm:hidden">
-                      <p className="truncate text-sm font-bold text-text-primary">{displayName}</p>
-                      {displayEmail ? (
-                        <p className="truncate text-xs text-text-tertiary">{displayEmail}</p>
-                      ) : null}
-                    </div>
+                {isProfileMenuOpen && profileMenuPosition
+                  ? createPortal(
+                    <div
+                      aria-label="User menu"
+                      className="fixed z-[100] w-56 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-card border border-border bg-surface p-2 shadow-card dark:shadow-card-dark"
+                      ref={profileMenuRef}
+                      role="menu"
+                      style={{
+                        maxHeight: `calc(100dvh - ${profileMenuPosition.top}px - 0.5rem)`,
+                        right: profileMenuPosition.right,
+                        top: profileMenuPosition.top,
+                      }}
+                    >
+                      <div className="border-b border-border px-3 py-2 sm:hidden">
+                        <p className="truncate text-sm font-bold text-text-primary">{displayName}</p>
+                        {displayEmail ? (
+                          <p className="truncate text-xs text-text-tertiary">{displayEmail}</p>
+                        ) : null}
+                      </div>
 
-                    <div className="py-1">
-                      <NavLink
-                        className="flex items-center gap-2.5 rounded-control px-3 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                        role="menuitem"
-                        to="/profile"
-                      >
-                        <ProfileIcon className="h-4 w-4 shrink-0" />
-                        <span>Profile</span>
-                      </NavLink>
+                      <div className="py-1">
+                        <NavLink
+                          className="flex min-h-11 items-center gap-2.5 rounded-control px-3 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                          role="menuitem"
+                          to="/profile"
+                        >
+                          <ProfileIcon className="h-4 w-4 shrink-0" />
+                          <span>Profile</span>
+                        </NavLink>
 
-                      <button
-                        className="flex w-full items-center gap-2.5 rounded-control px-3 py-2 text-left text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
-                        onClick={handleLogout}
-                        role="menuitem"
-                        type="button"
-                      >
-                        <LogoutIcon className="h-4 w-4 shrink-0" />
-                        <span>Sign out</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
+                        <button
+                          className="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-left text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
+                          onClick={handleLogout}
+                          role="menuitem"
+                          type="button"
+                        >
+                          <LogoutIcon className="h-4 w-4 shrink-0" />
+                          <span>Sign out</span>
+                        </button>
+                      </div>
+                    </div>,
+                    document.body,
+                  )
+                  : null}
               </div>
             </div>
           </div>
